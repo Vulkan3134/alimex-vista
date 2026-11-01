@@ -8,17 +8,14 @@ Repositorio **privado**: solo entra quien reciba y acepte una invitación.
 
 | Qué | Dónde |
 |---|---|
-| Proyecto | https://github.com/Vulkan3134/alimex |
+| Ver la plataforma | https://vulkan3134.github.io/alimex/ |
+| Código de invitación | `ALIMEX-2026` |
+| Código fuente (privado) | https://github.com/Vulkan3134/alimex |
 | Clonar | `git clone https://github.com/Vulkan3134/alimex.git` |
-| Invitar a alguien | https://github.com/Vulkan3134/alimex/settings/access |
 
 ## Cómo entrar
 
-1. El dueño invita desde [Collaborators](https://github.com/Vulkan3134/alimex/settings/access) con el usuario de GitHub de la persona.
-2. Esa persona acepta el correo o entra a https://github.com/Vulkan3134/alimex/invitations
-3. Después ya puede ver y clonar el repositorio.
-
-No hay un código suelto: GitHub solo abre el repo a quienes están invitados.
+Abra el enlace de la plataforma. En la pantalla de entrada escriba el código `ALIMEX-2026` y pulse **Entrar**. Es el mismo tipo de acceso que el layout de Metalpar.
 
 ## Cómo correrlo en el PC
 

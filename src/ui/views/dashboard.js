@@ -179,7 +179,6 @@ export function createDashboardView(ctx) {
           }),
         ),
         h('div.dash-reveal', { id: 'grafico-critico', class: open('critico') ? 'is-open' : '', hidden: !open('critico') },
-          h('p.formula-box', 'Sin existencias = stock físico 0. No quedó ninguna unidad. Si todavía hay algo, aunque sea poco, el SKU va en “Bajo stock mínimo”.'),
           compareBarChart('Nada en bodega frente al mínimo', empty.map((a) => ({
             label: a.sku,
             actual: a.total,

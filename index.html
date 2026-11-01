@@ -11,10 +11,19 @@
   <link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./assets/icons/icon.svg">
 </head>
-<body>
+<body class="locked">
+  <div id="invite">
+    <form id="inviteForm">
+      <b>Alimex Logística</b>
+      <p>Esta información es reservada. Entre solo con un código de invitación.</p>
+      <input id="inviteCode" type="password" autocomplete="off" placeholder="Código de invitación" spellcheck="false">
+      <button class="btn btn-primary" id="inviteGo" type="submit">Entrar</button>
+      <p id="inviteErr" class="err"></p>
+    </form>
+  </div>
   <div id="app">
     <p class="boot">Cargando la plataforma de demostración…</p>
   </div>
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./src/invite.js"></script>
 </body>
 </html>

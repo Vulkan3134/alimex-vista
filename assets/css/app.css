@@ -39,6 +39,39 @@ body {
 }
 #app { min-height: 100vh; }
 .boot { margin: 32px; color: var(--muted); }
+
+#invite {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--sidebar);
+}
+body.locked #invite { display: flex; }
+body.locked #app { visibility: hidden; }
+#invite form {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+#invite b { font-size: 18px; color: var(--text); }
+#invite p { margin: 0; line-height: 1.45; color: var(--muted); }
+#invite input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+#invite .err { min-height: 1.2em; color: var(--critico); font-size: 13px; }
+#inviteGo { min-height: 42px; background: var(--accent); border: 0; color: #fff; border-radius: 8px; font-weight: 650; }
+#inviteGo:hover { filter: brightness(1.05); }
 a { color: var(--accent); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
