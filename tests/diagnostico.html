@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Diagnóstico de datos de demostración</title>
+  <style>body { font: 13px/1.45 Consolas, monospace; margin: 12px; } pre { white-space: pre; }</style>
+</head>
+<body>
+  <pre id="resultado">Calculando…</pre>
+  <script type="module">
+    import { makeEnv, NOW } from './env.js';
+    import { fmtInt, fmtNum, fmtDays, fmtUnits } from '../src/core/format.js';
+    const out = document.getElementById('resultado');
+    try {
+      const env = makeEnv();
+      const inv = env.inventory;
+      const st = env.store.getState();
+      const L = [];
+      const alerts = inv.alerts();
+      const k = inv.kpis(alerts);
+      L.push('== KPI ==');
+      for (const [key, v] of Object.entries(k)) if (typeof v !== 'object') L.push(`${key.padEnd(20)} ${typeof v === 'number' ? fmtNum(v, 1) : v}`);
+      L.push('', '== ALERTAS (nivel, sku, disp, min, rop, consumo/d, cobertura, plazo, sugerido, pendiente) ==');
+      for (const a of alerts) L.push(`${a.level.padEnd(10)} ${a.sku} disp=${String(a.available).padStart(5)} min=${String(a.minStock).padStart(4)} rop=${String(a.reorderPoint).padStart(4)} d=${fmtUnits(a.avgDaily).padStart(6)} cob=${fmtDays(a.coverageDays).padStart(14)} lt=${String(a.leadTimeDays).padStart(2)} sug=${String(a.suggestedQty).padStart(5)} pend=${a.pending} ${a.atRisk ? 'RIESGO' : ''}`);
+      const abc = inv.allAbc();
+      for (const c of ['valor', 'frecuencia', 'rotacion', 'volumen']) {
+        const s = abc[c].summary;
+        L.push('', `== ABC ${c} == A:${s.A.count} (${fmtNum(s.A.share, 0)}%)  B:${s.B.count} (${fmtNum(s.B.share, 0)}%)  C:${s.C.count} (${fmtNum(s.C.share, 0)}%)`);
+        L.push(abc[c].ordered.slice(0, 8).map((e) => `${e.sku}:${e.cls}:${fmtNum(e.metric, 0)}`).join('  '));
+      }
+      L.push('', '== SERIE MENSUAL ==');
+      for (const m of inv.monthlySeries(8)) L.push(`${m.label.padEnd(8)} ent=${String(m.entradas).padStart(6)} sal=${String(m.salidas).padStart(6)} dev=${String(m.devoluciones).padStart(4)} tras=${String(m.traslados).padStart(5)} movs=${m.movimientos}`);
+      L.push('', '== RANKING mes actual (top 10) ==');
+      const r = inv.ranking({ period: inv.period('mes_actual') });
+      L.push(`unidades=${r.totalUnits} movimientos=${r.totalMovements} devoluciones=${r.returnsUnits}`);
+      for (const row of r.rows.slice(0, 10)) L.push(`${String(row.position).padStart(2)} ${row.sku} ${row.name.slice(0, 34).padEnd(34)} u=${String(row.units).padStart(5)} mov=${String(row.movements).padStart(3)} ${fmtNum(row.share, 1).padStart(5)}%  ${row.departmentLabel}`);
+      L.push('', '== DEPARTAMENTOS (mes actual) ==');
+      for (const d of inv.departmentTotals(inv.period('mes_actual'))) L.push(`${d.name.padEnd(32)} u=${String(d.units).padStart(6)} mov=${String(d.movements).padStart(4)} ${fmtNum(d.pct, 1)}%`);
+      const occ = inv.occupancy();
+      L.push('', `== OCUPACIÓN == ubicaciones ${occ.occupied}/${occ.total} (${fmtNum(occ.pct, 1)}%) capacidad ${fmtNum(occ.capacityPct, 1)}%`);
+      L.push(`movimientos=${st.movements.length} operaciones=${st.meta.operationSeq} tamaño≈${fmtInt(env.store.approximateSize() / 1024)} KB`);
+      L.push('', '== REUBICACIÓN sugerida (ganancia >= 15) ==');
+      for (const s of inv.slotting().filter((x) => x.gain >= 15).slice(0, 8)) L.push(`${s.sku} clase ${s.cls} ${s.currentLocation}(${s.currentScore}) -> ${s.recommendedLocation}(${s.recommendedScore}) ganancia=${s.gain}`);
+      out.textContent = L.join('\n');
+    } catch (e) {
+      out.textContent = 'ERROR: ' + (e.stack || e);
+    }
+  </script>
+</body>
+</html>
