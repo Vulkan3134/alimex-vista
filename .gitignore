@@ -7,4 +7,5 @@ desktop.ini
 .cursor/
 .env
 .env.*
+acceso.local.txt
 node_modules/

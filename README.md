@@ -4,16 +4,15 @@ Prototipo de inventario y logística. Datos ficticios de demostración. Sin cone
 
 Repositorio **privado**: solo entra quien reciba y acepte una invitación.
 
-## Acceso fijo (no cambia)
+## Enlace de la vista
 
 | Qué | Dónde |
 |---|---|
-| Enlace de invitación | https://vulkan3134.github.io/alimex-vista/ |
-| Clave de acceso | `ALIMEX-2026` |
+| Vista | https://vulkan3134.github.io/alimex-vista/ |
 | Código fuente (privado) | https://github.com/Vulkan3134/alimex |
 | Clonar | `git clone https://github.com/Vulkan3134/alimex.git` |
 
-Abra el enlace, pulse **Entrar** (la clave ya viene escrita) o cópiela desde el recuadro de la pantalla. Dentro de la plataforma el enlace y la clave quedan fijos en el menú izquierdo y en Configuración.
+La clave de invitación no está en este repositorio ni en la pantalla de entrada. Se entrega aparte. En el código solo queda el hash.
 
 ## Cómo correrlo en el PC
 

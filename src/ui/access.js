@@ -34,17 +34,12 @@ export function accessCard({ onCopy, variant = 'light' } = {}) {
   }
 
   return h(`div.access-card${variant === 'dark' ? '.is-dark' : ''}`,
-    h('strong', 'Acceso de invitación'),
-    h('p', 'Enlace y clave fijos. No cambian.'),
+    h('strong', 'Enlace de la vista'),
+    h('p', 'Este enlace es público. La clave de invitación no se muestra: se entrega aparte.'),
     h('div.access-row',
       h('span.access-k', 'Enlace'),
       h('a.access-v', { href: ACCESS.url, target: '_blank', rel: 'noreferrer', title: ACCESS.url }, ACCESS.label),
       copyBtn('Copiar', ACCESS.url, 'Enlace copiado.'),
-    ),
-    h('div.access-row',
-      h('span.access-k', 'Clave'),
-      h('code.access-v', ACCESS.code),
-      copyBtn('Copiar', ACCESS.code, 'Clave copiada.'),
     ),
   );
 }

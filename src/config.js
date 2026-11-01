@@ -5,7 +5,7 @@ export const APP = Object.freeze({
   name: 'Alimex Logística',
   shortName: 'Alimex',
   subtitle: 'Gestión de inventario y optimización logística',
-  version: '1.1.0-demo',
+  version: '1.1.1-demo',
   company: 'Alimex (demostración)',
   demo: true,
   demoLabel: 'DEMOSTRACIÓN',
@@ -14,11 +14,10 @@ export const APP = Object.freeze({
   storageNote: 'Los datos se guardan en este navegador y permanecen entre sesiones.',
 });
 
-/** Enlace y clave fijos de la demostración. No rotan. */
+/** Enlace público de la vista. La clave no se guarda ni se muestra en el código. */
 export const ACCESS = Object.freeze({
   url: 'https://vulkan3134.github.io/alimex-vista/',
   label: 'alimex-vista',
-  code: 'ALIMEX-2026',
 });
 
 export const ROUTES = Object.freeze([
