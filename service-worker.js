@@ -1,7 +1,7 @@
 /* Service worker de la plataforma de demostración.
    Permite abrir la interfaz sin red después de la primera visita.
    Los movimientos hechos sin conexión se validan al sincronizar. */
-const CACHE = 'alimex-logistica-demo-v3';
+const CACHE = 'alimex-logistica-demo-v1.1.0';
 const PRECACHE = [
   './',
   './index.html',

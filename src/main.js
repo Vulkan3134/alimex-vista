@@ -103,7 +103,9 @@ addEventListener('online', () => {
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register(new URL('../service-worker.js', import.meta.url)).catch(() => {
+  navigator.serviceWorker.register(new URL('../service-worker.js', import.meta.url), { updateViaCache: 'none' }).then((reg) => {
+    reg.update();
+  }).catch(() => {
     /* El prototipo funciona igual sin PWA. */
   });
 }
