@@ -8,14 +8,13 @@ Repositorio **privado**: solo entra quien reciba y acepte una invitación.
 
 | Qué | Dónde |
 |---|---|
-| Ver la plataforma | https://vulkan3134.github.io/alimex/ |
-| Código de invitación | `ALIMEX-2026` |
+| Ver la plataforma | https://vulkan3134.github.io/alimex-vista/ |
 | Código fuente (privado) | https://github.com/Vulkan3134/alimex |
 | Clonar | `git clone https://github.com/Vulkan3134/alimex.git` |
 
 ## Cómo entrar
 
-Abra el enlace de la plataforma. En la pantalla de entrada escriba el código `ALIMEX-2026` y pulse **Entrar**. Es el mismo tipo de acceso que el layout de Metalpar.
+Abra el enlace de la plataforma. En la pantalla de entrada escriba el código de invitación que le entregaron y pulse **Entrar**. Es el mismo tipo de acceso que el layout de Metalpar.
 
 ## Cómo correrlo en el PC
 
