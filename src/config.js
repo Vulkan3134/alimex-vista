@@ -5,7 +5,7 @@ export const APP = Object.freeze({
   name: 'Alimex Logística',
   shortName: 'Alimex',
   subtitle: 'Gestión de inventario y optimización logística',
-  version: '1.1.1-demo',
+  version: '1.1.2-demo',
   company: 'Alimex (demostración)',
   demo: true,
   demoLabel: 'DEMOSTRACIÓN',
