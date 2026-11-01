@@ -1,11 +1,11 @@
 import { h, replace } from '../core/dom.js';
 import { APP, ROUTES } from '../config.js';
+import { accessCard } from './access.js';
 import { icons } from './icons.js';
 
 const ICON_BY_ROUTE = {
   dashboard: icons.dashboard,
   inventario: icons.inventory,
-  ranking: icons.ranking,
   movimientos: icons.movements,
   historial: icons.history,
   reportes: icons.reports,
@@ -45,6 +45,11 @@ export function createShell() {
       refs.user = h('span.user-chip', userLabel || '');
       refs.outlet = h('div.page#contenido');
       refs.toasts = h('div.toast-host', { 'aria-live': 'polite' });
+      const ping = (message, kind = 'info') => {
+        const el = h(`div.toast${kind === 'error' ? '.is-error' : kind === 'ok' ? '.is-ok' : ''}`, message);
+        refs.toasts.append(el);
+        setTimeout(() => el.remove(), 4200);
+      };
       refs.sidebar = h('aside.sidebar#menu',
         h('div.brand',
           h('div.brand-name', APP.name),
@@ -52,7 +57,10 @@ export function createShell() {
           h('span.demo-pill', APP.demoLabel),
         ),
         refs.nav,
-        h('div.sidebar-foot', `${APP.version} · ${APP.storageNote}`),
+        h('div.sidebar-foot',
+          accessCard({ variant: 'dark', onCopy: ping }),
+          h('div', `${APP.version} · ${APP.storageNote}`),
+        ),
       );
       refs.overlay = h('div.overlay', { onClick: closeMenu });
       replace(root,

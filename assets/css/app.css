@@ -53,7 +53,7 @@ body {
 body.locked #invite { display: flex; }
 body.locked #app { visibility: hidden; }
 #invite form {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -131,10 +131,57 @@ button { cursor: pointer; }
 .nav-text small { font-size: 11px; opacity: .75; font-weight: 400; }
 .sidebar-foot {
   margin-top: auto;
-  padding: 12px 16px 18px;
+  padding: 12px 12px 16px;
   font-size: 11px;
   color: #8ea0b3;
   border-top: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.access-card {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.access-card strong { font-size: 13px; color: var(--text); }
+.access-card > p { margin: 0; font-size: 12px; color: var(--muted); }
+.access-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+.access-k { font-size: 11px; color: var(--muted); font-weight: 650; }
+.access-v {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+a.access-v:hover { text-decoration: underline; }
+.access-copy { padding: 3px 8px; min-height: 0; }
+.access-card.is-dark {
+  background: var(--sidebar-2);
+  border-color: rgba(255,255,255,.1);
+}
+.access-card.is-dark strong,
+.access-card.is-dark .access-v { color: #fff; }
+.access-card.is-dark > p,
+.access-card.is-dark .access-k { color: #8ea0b3; }
+.access-card.is-dark .access-copy {
+  background: #1b2838;
+  color: #fff;
+  border-color: rgba(255,255,255,.16);
 }
 
 .workspace { min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
@@ -199,6 +246,39 @@ button { cursor: pointer; }
   align-items: center;
   margin-bottom: 10px;
 }
+
+.ficha-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ficha-top h2 { margin: 0; }
+.ficha-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ficha-note {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.fact {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+.fact-k { display: block; font-size: 10px; color: var(--muted); line-height: 1.2; }
+.fact-v { display: block; margin-top: 2px; font-size: 14px; font-weight: 700; line-height: 1.2; word-break: break-word; }
+.fact-h { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); }
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
 
@@ -455,6 +535,37 @@ table.data .sku { font-family: var(--mono); font-size: 12px; }
   align-items: start;
 }
 
+.inv-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.inv-board.is-map {
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+.inv-main { min-width: 0; }
+.inv-main .loc-panel p { margin: 8px 0; line-height: 1.5; }
+.layout-mini {
+  position: sticky;
+  top: 12px;
+  padding: 10px;
+  align-self: start;
+}
+.layout-mini h2 { font-size: 13px; margin: 0; }
+.layout-mini .aisles { gap: 6px; }
+.layout-mini .aisle-title { font-size: 10px; margin-bottom: 3px; }
+.layout-mini .racks { gap: 2px; }
+.layout-mini .slot {
+  min-height: 14px;
+  padding: 1px;
+  font-size: 0;
+  border-radius: 2px;
+}
+.layout-mini .slot .code,
+.layout-mini .slot .slot-meta { display: none; }
+.layout-mini .slot.is-hit { min-height: 16px; }
+
 .layout {
   display: flex;
   flex-direction: column;
@@ -671,7 +782,8 @@ table.data .sku { font-family: var(--mono); font-size: 12px; }
 
 @media (max-width: 1100px) {
   .kpis, .kpis.kpis-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .charts, .split, .detail-grid { grid-template-columns: 1fr; }
+  .charts, .split, .detail-grid, .inv-board.is-map { grid-template-columns: 1fr; }
+  .layout-mini { position: static; max-width: 280px; margin-left: auto; }
   .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
   .donut-legend { width: 100%; }
   .racks { grid-template-columns: repeat(3, minmax(0, 1fr)); }

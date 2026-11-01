@@ -14,10 +14,16 @@ export const APP = Object.freeze({
   storageNote: 'Los datos se guardan en este navegador y permanecen entre sesiones.',
 });
 
+/** Enlace y clave fijos de la demostración. No rotan. */
+export const ACCESS = Object.freeze({
+  url: 'https://vulkan3134.github.io/alimex-vista/',
+  label: 'alimex-vista',
+  code: 'ALIMEX-2026',
+});
+
 export const ROUTES = Object.freeze([
   { id: 'dashboard', path: '/dashboard', label: 'Dashboard', hint: 'Estado general de la bodega' },
   { id: 'inventario', path: '/inventario', label: 'Inventario y layout', hint: 'Existencias; Pareto al abrir un SKU' },
-  { id: 'ranking', path: '/ranking', label: 'Ranking de salidas', hint: 'Productos con mayor retiro' },
   { id: 'movimientos', path: '/movimientos', label: 'Entradas y salidas', hint: 'Formulario y picking por QR' },
   { id: 'historial', path: '/historial', label: 'Historial', hint: 'Trazabilidad de movimientos' },
   { id: 'reportes', path: '/reportes', label: 'Reportes', hint: 'Informes para presentar' },

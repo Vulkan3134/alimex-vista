@@ -1,8 +1,8 @@
 import { replace, h } from '../../core/dom.js';
-import { ceilUnits, countOf, fmtDays, fmtInt, fmtMoney, fmtPct, fmtUnits } from '../../core/format.js';
-import { ALERT_LEVELS, ALERT_ORDER } from '../../domain/alerts.js';
+import { PERIOD_PRESETS } from '../../core/dates.js';
+import { ceilUnits, fmtDays, fmtInt, fmtMoney, fmtPct, fmtUnits } from '../../core/format.js';
 import { barChart, compareBarChart, donutChart, groupedBarChart, lineChart } from '../charts/svgCharts.js';
-import { badge, dataTable, kpiCard, pageHeader, stockNum, tabs } from '../components/common.js';
+import { dataTable, field, kpiCard, pageHeader, select, stockNum } from '../components/common.js';
 
 function legendBox(title, items) {
   return h('div.legend-box',
@@ -15,13 +15,17 @@ function legendBox(title, items) {
 }
 
 export function createDashboardView(ctx) {
-  const ui = { alertLevel: 'todos', open: null, pick: null };
+  const ui = {
+    open: null,
+    pick: null,
+    rank: { periodId: 'mes_actual', from: '', to: '', departmentId: '', open: null },
+    match: null,
+    routeToken: '',
+    scrolledRank: false,
+  };
 
   function toggle(id, container) {
     ui.open = ui.open === id ? null : id;
-    if (id === 'critico' || id === 'atencion' || id === 'riesgo') {
-      ui.alertLevel = ui.open ? (id === 'riesgo' ? 'todos' : id === 'critico' ? 'critico' : 'atencion') : ui.alertLevel;
-    }
     render(container);
     if (ui.open) {
       requestAnimationFrame(() => {
@@ -62,12 +66,22 @@ export function createDashboardView(ctx) {
     );
   }
 
-  function render(container) {
+  function render(container, match = ui.match) {
+    if (match) ui.match = match;
+    const routeToken = JSON.stringify(match?.query || {});
+    if (routeToken !== ui.routeToken) {
+      ui.routeToken = routeToken;
+      ui.scrolledRank = false;
+      if (match?.query?.departamento) ui.rank.departmentId = match.query.departamento;
+      if (match?.query?.seccion === 'ranking') ui.open = 'ranking';
+    }
     const alerts = ctx.inventory.alerts();
     const kpis = ctx.inventory.kpis(alerts);
     const monthly = ctx.inventory.monthlySeries(6);
     const period = ctx.inventory.period('mes_actual');
-    const ranking = ctx.inventory.ranking({ period });
+    const rankPeriod = ctx.inventory.period(ui.rank.periodId, { from: ui.rank.from, to: ui.rank.to });
+    const rankData = ctx.inventory.ranking({ period: rankPeriod, departmentId: ui.rank.departmentId || null });
+    const st = ctx.store.getState();
     const depts = ctx.inventory.departmentTotals(period);
     const deptMonth = ctx.inventory.departmentMonthly(6);
     const byCategory = ctx.inventory.valueByCategory();
@@ -77,14 +91,13 @@ export function createDashboardView(ctx) {
     const empty = alerts.filter((a) => a.level === 'critico');
     const stockouts = ctx.inventory.stockouts(180);
     const emptyDays = new Map(stockouts.filter((r) => r.currentlyOut).map((r) => [r.sku, r]));
-    const filtered = ui.alertLevel === 'todos' ? alerts : alerts.filter((a) => a.level === ui.alertLevel);
     const open = (id) => ui.open === id;
     const click = (id) => () => toggle(id, container);
 
     replace(container,
       pageHeader(
         'Dashboard de bodega',
-        'Cada número está junto a su gráfico. Toque una barra de familia o departamento para ver sus SKU. Las cantidades se abren con el botón chico.',
+        'Alertas, movimientos y ranking de salidas en una sola pantalla. Toque una barra de familia o departamento para ver sus SKU.',
       ),
 
       h('section.card.dash-block',
@@ -285,9 +298,9 @@ export function createDashboardView(ctx) {
         ),
       ),
 
-      h('section.card.dash-block',
+      h('section.card.dash-block#ranking-salidas',
         h('h2', 'Movimientos del mes'),
-        h('div.grid.kpis.kpis-2',
+        h('div.grid.kpis.kpis-3',
           kpiCard({
             label: 'Salidas del mes',
             value: fmtInt(kpis.monthExitUnits),
@@ -304,6 +317,16 @@ export function createDashboardView(ctx) {
             open: open('entradas'),
             onClick: click('entradas'),
           }),
+          kpiCard({
+            label: 'Ranking de salidas',
+            value: rankData.rows[0]?.sku || '—',
+            hint: rankData.rows[0]
+              ? `1° · ${fmtInt(rankData.rows[0].units)} un. · ${fmtInt(rankData.rows.length)} SKU`
+              : 'Sin salidas en el período',
+            hasChart: true,
+            open: open('ranking'),
+            onClick: click('ranking'),
+          }),
         ),
         h('div.dash-reveal', { id: 'grafico-salidas', class: open('salidas') ? 'is-open' : '', hidden: !open('salidas') },
           lineChart('Evolución mensual de entradas y salidas', monthly.map((m) => ({ label: m.label })), {
@@ -312,12 +335,11 @@ export function createDashboardView(ctx) {
               { label: 'Entradas', values: monthly.map((m) => m.entradas), color: '#2b6cb0' },
             ],
           }),
-          barChart('Productos con más unidades retiradas este mes', ranking.rows.slice(0, 8).map((r) => ({ label: r.sku, value: r.units, hint: r.name }))),
-          legendBox('Cómo leer estos gráficos', [
+          legendBox('Cómo leer este gráfico', [
             { color: '#c05621', text: `La línea naranja es lo que se retiró. El número ${fmtInt(kpis.monthExitUnits)} son unidades del mes actual, no movimientos.` },
             { color: '#2b6cb0', text: 'La línea azul es lo que ingresó a bodega (recepciones).' },
             { text: `Hubo ${fmtInt(kpis.monthExitMoves)} retiros. Un retiro de 50 cajas cuenta como 1 movimiento y 50 unidades.` },
-            { text: 'Las barras de abajo muestran qué SKU concentraron las salidas. Las devoluciones no se suman aquí.' },
+            { text: 'El detalle por SKU está en Ranking de salidas, al lado. Toque ese recuadro para abrirlo. Las devoluciones no se suman.' },
           ]),
         ),
         h('div.dash-reveal', { id: 'grafico-entradas', class: open('entradas') ? 'is-open' : '', hidden: !open('entradas') },
@@ -332,6 +354,97 @@ export function createDashboardView(ctx) {
             { color: '#c05621', text: 'La línea naranja es lo retirado, para comparar si la bodega se está reponiendo o vaciando.' },
             { text: `Se registraron ${fmtInt(kpis.monthEntryMoves)} recepciones. El mes anterior ingresaron ${fmtInt(kpis.prevMonthEntryUnits)} unidades.` },
           ]),
+        ),
+        h('div.dash-reveal', { id: 'grafico-ranking', class: open('ranking') ? 'is-open' : '', hidden: !open('ranking') },
+          h('p.muted.small', 'Unidades retiradas del período. Si un SKU lo pidieron varias áreas, el desglose queda en la fila. Las devoluciones no cuentan.'),
+          h('div.filters',
+            field({
+              label: 'Período',
+              children: select({
+                value: ui.rank.periodId,
+                onChange: (e) => { ui.rank.periodId = e.target.value; render(container, match); },
+              }, PERIOD_PRESETS.map((p) => ({ value: p.id, label: p.label }))),
+            }),
+            ui.rank.periodId === 'personalizado' ? field({
+              label: 'Desde',
+              children: h('input', { type: 'date', value: ui.rank.from || '', onChange: (e) => { ui.rank.from = e.target.value; render(container, match); } }),
+            }) : null,
+            ui.rank.periodId === 'personalizado' ? field({
+              label: 'Hasta',
+              children: h('input', { type: 'date', value: ui.rank.to || '', onChange: (e) => { ui.rank.to = e.target.value; render(container, match); } }),
+            }) : null,
+            field({
+              label: 'Departamento',
+              children: select({
+                value: ui.rank.departmentId,
+                onChange: (e) => { ui.rank.departmentId = e.target.value; render(container, match); },
+              }, [{ value: '', label: 'Todos los departamentos' }, ...st.departments.map((d) => ({ value: d.id, label: d.name }))]),
+            }),
+          ),
+          !rankPeriod.valid ? h('p.err', rankPeriod.error) : h('p',
+            `${rankPeriod.label}. Retiradas: ${fmtInt(rankData.totalUnits)} un. · ${fmtInt(rankData.totalMovements)} movimientos. Devoluciones (no suman): ${fmtInt(rankData.returnsUnits)}.`,
+          ),
+          h('div.grid.charts',
+            barChart('Unidades retiradas', rankData.rows.slice(0, 10).map((r) => ({
+              label: r.sku,
+              value: r.units,
+              hint: r.name,
+              selected: ui.rank.open === r.sku,
+            })), {
+              maxItems: 10,
+              onSelect: (item) => {
+                ui.rank.open = ui.rank.open === item.label ? null : item.label;
+                render(container, match);
+              },
+            }),
+            barChart('Participación por departamento', rankData.departments.map((d) => ({
+              label: d.name,
+              value: d.units,
+              id: d.departmentId,
+              selected: ui.rank.departmentId === d.departmentId,
+            })), {
+              onSelect: (item) => {
+                ui.rank.departmentId = ui.rank.departmentId === item.id ? '' : item.id;
+                render(container, match);
+              },
+            }),
+          ),
+          dataTable({
+            empty: 'No hubo salidas en el período seleccionado.',
+            selectedKey: ui.rank.open,
+            rowKey: (row) => row.sku,
+            onRowClick: (row) => { ui.rank.open = ui.rank.open === row.sku ? null : row.sku; render(container, match); },
+            columns: [
+              { key: 'position', label: 'Puesto', align: 'right' },
+              { key: 'sku', label: 'SKU', render: (v) => h('span.sku', v) },
+              { key: 'name', label: 'Producto' },
+              { key: 'departmentLabel', label: 'Departamento' },
+              { key: 'units', label: 'Unidades', align: 'right', render: (v) => fmtInt(v) },
+              { key: 'share', label: 'Participación', align: 'right', render: (v) => fmtPct(v) },
+              { key: 'movements', label: 'Movimientos', align: 'right', render: (v) => fmtInt(v) },
+            ],
+            rows: rankData.rows,
+          }),
+          ui.rank.open ? (() => {
+            const row = rankData.rows.find((r) => r.sku === ui.rank.open);
+            if (!row) return null;
+            return h('div', { style: { marginTop: '12px' } },
+              h('h3', `Desglose de ${row.sku}`),
+              h('p.muted.small', 'Cada área conserva su consumo; el SKU no se asigna a un solo departamento.'),
+              dataTable({
+                columns: [
+                  { key: 'name', label: 'Departamento' },
+                  { key: 'units', label: 'Unidades', align: 'right', render: (v) => fmtInt(v) },
+                  { key: 'movements', label: 'Movimientos', align: 'right', render: (v) => fmtInt(v) },
+                  { key: 'pct', label: 'Sobre el SKU', align: 'right', render: (v) => fmtPct(v) },
+                ],
+                rows: row.departments,
+              }),
+              h('div.btn-row',
+                h('button.btn', { type: 'button', onClick: () => ctx.navigate(`/producto/${row.sku}`) }, 'Ver ficha del producto'),
+              ),
+            );
+          })() : h('p.muted.small', 'Pulse un producto para ver el desglose por departamento.'),
         ),
       ),
 
@@ -405,36 +518,13 @@ export function createDashboardView(ctx) {
           ),
         ),
       ),
-
-      h('section.card',
-        h('div.card-head',
-          h('h2', 'Listado de alertas'),
-          tabs(
-            [{ id: 'todos', label: 'Todas' }, ...ALERT_ORDER.map((id) => ({ id, label: ALERT_LEVELS[id].label }))],
-            ui.alertLevel,
-            (id) => { ui.alertLevel = id; render(container); },
-          ),
-        ),
-        h('p.muted.small', 'El orden es por prioridad: Crítico (sin existencias), Atención (bajo el mínimo), Precaución (cerca del punto de reposición o con poca cobertura) y Normal. El color se acompaña siempre de un texto. Pulse una fila para abrir el producto.'),
-        dataTable({
-          empty: 'No hay alertas en este filtro.',
-          onRowClick: (row) => ctx.navigate(`/producto/${row.sku}`),
-          columns: [
-            { key: 'levelLabel', label: 'Prioridad', render: (_, r) => badge(r.level, r.levelLabel) },
-            { key: 'sku', label: 'SKU', render: (v) => h('span.sku', v) },
-            { key: 'name', label: 'Producto' },
-              { key: 'available', label: 'Disponible', align: 'right', render: (v, r) => (r.total <= 0 ? stockNum(0, fmtInt(v)) : fmtInt(v)) },
-              { key: 'minStock', label: 'Mínimo', align: 'right', render: (v) => fmtInt(v) },
-              { key: 'avgDaily', label: 'Consumo diario', align: 'right', render: (v) => fmtUnits(v) },
-            { key: 'coverageDays', label: 'Cobertura', align: 'right', render: (v) => fmtDays(v) },
-            { key: 'leadTimeDays', label: 'Plazo proveedor', align: 'right', render: (v) => `${fmtInt(v)} días` },
-            { key: 'suggestedQty', label: 'Sugerido a reponer', align: 'right', render: (v) => (v ? fmtInt(v) : '—') },
-          ],
-          rows: filtered,
-        }),
-        h('p.muted.small', `${countOf(alerts.filter((a) => a.level !== 'normal').length, 'alerta requiere', 'alertas requieren')} revisión.`),
-      ),
     );
+    if (match?.query?.seccion === 'ranking' && !ui.scrolledRank) {
+      ui.scrolledRank = true;
+      requestAnimationFrame(() => {
+        container.querySelector('#grafico-ranking')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
   }
 
   return { render };

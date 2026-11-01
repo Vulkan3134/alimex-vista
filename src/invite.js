@@ -1,5 +1,8 @@
 // Puerta de entrada, como el layout de Metalpar: no carga la bodega
 // hasta que el código de invitación coincide.
+import { ACCESS } from './config.js';
+import { accessCard } from './ui/access.js';
+
 const KEY = 'alimex.invite';
 
 function hex(buffer) {
@@ -54,6 +57,11 @@ async function submit(ev) {
 if (sessionStorage.getItem(KEY) === 'ok') {
   unlock();
 } else {
+  const box = document.getElementById('inviteAccess');
+  if (box) box.replaceWith(accessCard());
+  const input = document.getElementById('inviteCode');
+  if (input && !input.value) input.value = ACCESS.code;
   document.getElementById('inviteForm')?.addEventListener('submit', submit);
-  document.getElementById('inviteCode')?.focus();
+  input?.focus();
+  input?.select();
 }

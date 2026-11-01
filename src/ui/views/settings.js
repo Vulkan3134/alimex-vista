@@ -1,4 +1,5 @@
 import { h, replace } from '../../core/dom.js';
+import { accessCard } from '../access.js';
 import { ABC_CRITERIA } from '../../domain/abc.js';
 import { HANDLING_RESTRICTIONS } from '../../data/schema.js';
 import { INTEGRATION_DOMAINS } from '../../integration/contracts.js';
@@ -289,7 +290,8 @@ export function createSettingsView(ctx) {
 
     replace(container,
       pageHeader('Configuración de productos y parámetros', 'Cambiar un mínimo o un criterio ABC no altera el historial de movimientos. Cada cambio queda en la auditoría interna.'),
-      h('div.tabs.no-print',
+      accessCard({ onCopy: (msg, kind) => ctx.toast(msg, kind) }),
+      h('div.tabs.no-print', { style: { marginTop: '12px' } },
         [['productos', 'Productos'], ['parametros', 'Parámetros'], ['dynamics', 'Dynamics (preparación)'], ['qr', 'Etiquetas QR']].map(([id, label]) => h('button.tab', {
           type: 'button',
           class: ui.tab === id ? 'is-on' : '',

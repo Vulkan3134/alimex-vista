@@ -13,7 +13,6 @@ import { createRouter } from './ui/router.js';
 import { createShell } from './ui/shell.js';
 import { createDashboardView } from './ui/views/dashboard.js';
 import { createInventoryView } from './ui/views/inventory.js';
-import { createRankingView } from './ui/views/ranking.js';
 import { createMovementsView } from './ui/views/movements.js';
 import { createHistoryView } from './ui/views/history.js';
 import { createReportsView } from './ui/views/reports.js';
@@ -58,7 +57,11 @@ ctx.confirm = (opts) => shell.confirm(opts);
 const router = createRouter([
   { id: 'dashboard', path: '/dashboard', factory: () => createDashboardView(ctx) },
   { id: 'inventario', path: '/inventario', factory: () => createInventoryView(ctx) },
-  { id: 'ranking', path: '/ranking', factory: () => createRankingView(ctx) },
+  { id: 'ranking', path: '/ranking', factory: () => ({
+    render(_container, match) {
+      ctx.navigate('/dashboard', { seccion: 'ranking', ...(match?.query || {}) });
+    },
+  }) },
   { id: 'movimientos', path: '/movimientos', factory: () => createMovementsView(ctx) },
   { id: 'historial', path: '/historial', factory: () => createHistoryView(ctx) },
   { id: 'reportes', path: '/reportes', factory: () => createReportsView(ctx) },
@@ -75,6 +78,10 @@ ctx.navigate = (path, query) => router.navigate(path, query);
 router.start(chrome.outlet, (match) => {
   if (match.id === 'movil') {
     ctx.navigate('/movimientos', { modo: 'picking', ...(match.query || {}) });
+    return;
+  }
+  if (match.id === 'ranking') {
+    ctx.navigate('/dashboard', { seccion: 'ranking', ...(match.query || {}) });
     return;
   }
   chrome.setRoute(match.id === 'producto' ? 'inventario' : match.id);

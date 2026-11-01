@@ -4,17 +4,16 @@ Prototipo de inventario y logística. Datos ficticios de demostración. Sin cone
 
 Repositorio **privado**: solo entra quien reciba y acepte una invitación.
 
-## Enlaces
+## Acceso fijo (no cambia)
 
 | Qué | Dónde |
 |---|---|
-| Ver la plataforma | https://vulkan3134.github.io/alimex-vista/ |
+| Enlace de invitación | https://vulkan3134.github.io/alimex-vista/ |
+| Clave de acceso | `ALIMEX-2026` |
 | Código fuente (privado) | https://github.com/Vulkan3134/alimex |
 | Clonar | `git clone https://github.com/Vulkan3134/alimex.git` |
 
-## Cómo entrar
-
-Abra el enlace de la plataforma. En la pantalla de entrada escriba el código de invitación que le entregaron y pulse **Entrar**. Es el mismo tipo de acceso que el layout de Metalpar.
+Abra el enlace, pulse **Entrar** (la clave ya viene escrita) o cópiela desde el recuadro de la pantalla. Dentro de la plataforma el enlace y la clave quedan fijos en el menú izquierdo y en Configuración.
 
 ## Cómo correrlo en el PC
 

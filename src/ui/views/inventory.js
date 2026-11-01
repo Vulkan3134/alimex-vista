@@ -19,6 +19,14 @@ function shortCode(code) {
   return code.replace('P0', 'P').replace('-E0', '-E').replace('-N0', '-N');
 }
 
+function fact(label, value) {
+  if (!label || value === null || value === undefined || value === false) return null;
+  return h('div.fact',
+    h('span.fact-k', label),
+    h('span.fact-v', value),
+  );
+}
+
 function applyMapQuery(ui, mapa) {
   if (mapa === 'pareto' || mapa === 'abc') ui.heat = 'abc';
   else if (mapa === 'actividad' || mapa === 'ocupacion') ui.heat = mapa;
@@ -37,18 +45,15 @@ export function createInventoryView(ctx) {
     heat: 'abc',
     criterion: '',
     paretoOpen: false,
-    scrollPareto: false,
     routeToken: '',
   };
 
   function openPareto() {
-    if (!ui.paretoOpen) ui.scrollPareto = true;
     ui.paretoOpen = true;
   }
 
   function closePareto() {
     ui.paretoOpen = false;
-    ui.scrollPareto = false;
   }
 
   function togglePareto() {
@@ -146,10 +151,10 @@ export function createInventoryView(ctx) {
     replace(container,
       pageHeader(
         'Inventario y layout de bodega',
-        'Toque un SKU para abrir el Pareto de sus ubicaciones. Toque otra vez el mismo SKU —o Cerrar— para ocultarlo.',
+        'Toque un SKU para ver su ficha. El plano queda en un recuadro chico arriba a la derecha.',
       ),
-      h(showPareto ? 'div.split' : 'div',
-        h('section.card',
+      h(showPareto ? 'div.inv-board.is-map' : 'div.inv-board',
+        h('section.card.inv-main',
           h('h2', 'Panel de inventario'),
           h('div.filters',
             field({ label: 'Buscar SKU o nombre', className: 'grow', children: input({
@@ -183,6 +188,52 @@ export function createInventoryView(ctx) {
             }),
           ),
           h('p.muted.small', `Criterio Pareto activo: ${abcMeta?.label || 'valor'}. El valor económico y la frecuencia de retiro se analizan por separado; el criterio se elige aquí o en Configuración.`),
+          selected ? h('div.loc-panel', { style: { marginTop: '4px' } },
+            h('div.ficha-top',
+              h('h3', `${selected.product.sku} · ${selected.product.name}`),
+              h('div.ficha-badges', badge(selected.alert.level, selected.alert.levelLabel), abcBadge(skuClass)),
+            ),
+            field({
+              label: 'Criterio Pareto',
+              children: select({
+                value: criterion,
+                onChange: (e) => { ui.criterion = e.target.value; render(container, match); },
+              }, ABC_CRITERIA.map((c) => ({ value: c.id, label: c.label }))),
+            }),
+            h('div.facts',
+              fact('Cobertura', fmtDays(selected.alert.coverageDays)),
+              fact('Restricción', HANDLING_RESTRICTIONS[selected.product.handling.restriction]),
+              fact('Puesto Pareto', skuAbc?.noMovement ? 'C · sin movimiento' : `${fmtInt(skuAbc?.rank)} · ${fmtPct(skuAbc?.share)}`),
+              fact('Ubicaciones', selected.locations.length
+                ? selected.locations.map((l) => `${l.location} (${fmtInt(l.qty)})`).join(' · ')
+                : 'Ninguna'),
+              locDetail && skuHere
+                ? fact('Posición', `${locDetail.location.code} · ${fmtInt(skuHere.qty)} ${selected.product.unit}`)
+                : null,
+            ),
+            misplaced.length ? h('div.slotting-box',
+              h('h3', `${selected.product.sku} está lejos de una posición accesible`),
+              h('p', 'Recomendación solo para este SKU: no mueve existencias. Un A debería estar cerca del pasillo 1 y a altura cómoda.'),
+              dataTable({
+                columns: [
+                  { key: 'currentLocation', label: 'Hoy' },
+                  { key: 'recommendedLocation', label: 'Sugerida' },
+                ],
+                rows: misplaced,
+              }),
+            ) : null,
+            h('div.btn-row',
+              h('button.btn.btn-primary', {
+                type: 'button',
+                'aria-expanded': String(ui.paretoOpen),
+                onClick: () => { togglePareto(); render(container, match); },
+              }, ui.paretoOpen ? 'Ocultar plano ▴' : 'Ver plano ▾'),
+              h('button.btn', { type: 'button', onClick: () => ctx.navigate(`/producto/${selected.product.sku}`) }, 'Ver ficha'),
+              h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { sku: selected.product.sku }) }, 'Registrar movimiento'),
+              locDetail && skuHere ? h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { modo: 'picking', tipo: 'SALIDA', u: locDetail.location.code, sku: selected.product.sku }) }, 'Salida por picking') : null,
+              locDetail && skuHere ? h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { modo: 'picking', tipo: 'ENTRADA', u: locDetail.location.code, sku: selected.product.sku }) }, 'Ingreso por picking') : null,
+            ),
+          ) : h('p.muted.small', 'Toque un SKU para leer su ficha. El plano, si lo abre, queda arriba a la derecha.'),
           dataTable({
             selectedKey: ui.selectedSku,
             rowKey: (r) => r.sku,
@@ -211,87 +262,19 @@ export function createInventoryView(ctx) {
             ],
             rows,
           }),
-          selected ? h('div.loc-panel', { style: { marginTop: '12px' } },
-            h('h3', `${selected.product.sku} · ${selected.product.name}`),
-            h('p',
-              badge(selected.alert.level, selected.alert.levelLabel),
-              ' Pareto ',
-              abcBadge(abc.items.get(selected.product.sku)?.cls || 'C'),
-              ` · Cobertura: ${fmtDays(selected.alert.coverageDays)}. Restricción: ${HANDLING_RESTRICTIONS[selected.product.handling.restriction]}.`,
-            ),
-            h('p.muted.small', selected.locations.length
-              ? `Está en ${selected.locations.map((l) => `${l.location} (${fmtInt(l.qty)} · ${l.tier.label})`).join('; ')}.`
-              : 'Este producto no tiene existencias en ninguna ubicación.'),
-            h('div.btn-row',
-              h('button.btn.btn-primary', {
-                type: 'button',
-                'aria-expanded': String(ui.paretoOpen),
-                onClick: () => { togglePareto(); render(container, match); },
-              }, ui.paretoOpen ? 'Cerrar Pareto ▴' : 'Ver Pareto de ubicaciones ▾'),
-              h('button.btn', { type: 'button', onClick: () => ctx.navigate(`/producto/${selected.product.sku}`) }, 'Ver ficha'),
-              h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { sku: selected.product.sku }) }, 'Registrar movimiento'),
-            ),
-          ) : h('p.muted.small', 'Toque un SKU para abrir el Pareto de sus ubicaciones. Toque otra vez para cerrarlo.'),
         ),
-        showPareto ? h('section.card.layout',
+        showPareto ? h('section.card.layout.layout-mini',
           h('div.card-head',
-            h('h2', `Pareto de ${selected.product.sku}`),
-            h('button.btn', {
+            h('h2', selected.product.sku),
+            h('button.btn.btn-tiny', {
               type: 'button',
               onClick: () => { closePareto(); render(container, match); },
             }, 'Cerrar'),
           ),
-          h('div.filters',
-            field({
-              label: 'Criterio Pareto de este SKU',
-              children: select({
-                value: criterion,
-                onChange: (e) => { ui.criterion = e.target.value; render(container, match); },
-              }, ABC_CRITERIA.map((c) => ({ value: c.id, label: c.label }))),
-            }),
-          ),
-          h('div.pareto-legend',
-            h(`span.pareto-chip.is-${skuClass}`, h('b', skuClass), `${selected.product.sku} · Clase ${skuClass}`),
-            ...selected.locations.map((l) => h('span.pareto-chip', `${l.location} · ${fmtInt(l.qty)} ud.`)),
-            selected.locations.length ? null : h('span.pareto-chip.is-empty', h('b', '—'), 'Sin existencias'),
-          ),
-          h('p.muted.small', skuAbc?.noMovement
-            ? `${selected.product.sku} no tuvo movimiento en el período: queda en clase C. En el plano solo se marcan sus ubicaciones.`
-            : `${selected.product.sku} es clase ${skuClass} por ${abcMeta?.label || criterion}: puesto ${fmtInt(skuAbc?.rank)} · ${fmtPct(skuAbc?.share)} del total. ${abcMeta?.explain || ''} En los pasillos solo se destacan las ${fmtInt(selected.locations.length)} posiciones de este SKU.`),
-          misplaced.length ? h('div.slotting-box',
-            h('h3', `${selected.product.sku} está lejos de una posición accesible`),
-            h('p.muted.small', 'Recomendación solo para este SKU: no mueve existencias. Un A debería estar cerca del pasillo 1 y a altura cómoda.'),
-            dataTable({
-              columns: [
-                { key: 'currentLocation', label: 'Hoy' },
-                { key: 'recommendedLocation', label: 'Sugerida' },
-              ],
-              rows: misplaced,
-            }),
-          ) : null,
           h('div.aisles', aisleBlocks),
-          locDetail && skuHere ? h('div.loc-panel',
-            h('h3', locDetail.location.code, abcBadge(skuClass)),
-            h('p', `${selected.product.sku}: ${fmtInt(skuHere.qty)} ${selected.product.unit}. Accesibilidad: ${skuHere.tier.label} (${fmtInt(skuHere.accessScore)}).`),
-            h('p.muted.small', `Esta posición se destaca porque aquí está ${selected.product.sku} (clase ${skuClass}). El resto del plano queda atenuado a propósito.`),
-            h('div.btn-row', { style: { marginTop: '8px' } },
-              h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { modo: 'picking', tipo: 'SALIDA', u: locDetail.location.code, sku: selected.product.sku }) }, 'Salida por picking'),
-              h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { modo: 'picking', tipo: 'ENTRADA', u: locDetail.location.code, sku: selected.product.sku }) }, 'Ingreso por picking'),
-              h('button.btn', { type: 'button', onClick: () => ctx.navigate('/movimientos', { from: locDetail.location.code, sku: selected.product.sku, tipo: 'SALIDA' }) }, 'Formulario de salida'),
-            ),
-          ) : h('p.muted.small', selected.locations.length
-            ? 'Toque una posición destacada para ver cuánto de este SKU hay ahí.'
-            : 'Este SKU no tiene existencias: no hay posiciones que destacar.'),
         ) : null,
       ),
     );
-
-    if (ui.scrollPareto) {
-      ui.scrollPareto = false;
-      requestAnimationFrame(() => {
-        container.querySelector('.layout')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      });
-    }
   }
 
   return { render };

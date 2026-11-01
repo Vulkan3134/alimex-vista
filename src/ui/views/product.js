@@ -2,8 +2,16 @@ import { h, replace } from '../../core/dom.js';
 import { HANDLING_RESTRICTIONS } from '../../data/schema.js';
 import { ABC_CRITERIA } from '../../domain/abc.js';
 import { fmtDateTime, fmtDays, fmtInt, fmtMoney, fmtNum, fmtUnits } from '../../core/format.js';
-import { abcBadge, badge, dataTable, pageHeader } from '../components/common.js';
+import { abcBadge, badge, dataTable, pageHeader, stockNum } from '../components/common.js';
 import { barChart } from '../charts/svgCharts.js';
+
+function fact(label, value, hint) {
+  return h('div.fact',
+    h('span.fact-k', label),
+    h('span.fact-v', value),
+    hint ? h('span.fact-h', hint) : null,
+  );
+}
 
 export function createProductView(ctx) {
   function render(container, match) {
@@ -15,31 +23,49 @@ export function createProductView(ctx) {
     }
     const p = detail.product;
     const a = detail.alert;
+    const unit = p.unit;
     replace(container,
       pageHeader(`${p.sku} · ${p.name}`, `${p.category}. Datos ficticios de demostración.`),
+      h('section.card.ficha',
+        h('div.ficha-top',
+          h('h2', 'Estado de inventario'),
+          h('div.ficha-badges', badge(a.level, a.levelLabel), abcBadge(detail.abc.valor?.cls || 'C')),
+        ),
+        a.reasons?.[0] ? h('p.ficha-note', a.reasons[0]) : null,
+        h('div.facts',
+          fact('Stock total', stockNum(detail.total, `${fmtInt(detail.total)} ${unit}`)),
+          fact('Disponible', detail.total <= 0 ? stockNum(0, `${fmtInt(detail.available)} ${unit}`) : `${fmtInt(detail.available)} ${unit}`),
+          fact('Comprometido', `${fmtInt(detail.committed)} ${unit}`),
+          fact('Por recibir', `${fmtInt(detail.pending)} ${unit}`),
+          fact('Mínimo', `${fmtInt(p.params.minStock)} ${unit}`),
+          fact('Punto de reposición', `${fmtInt(p.params.reorderPoint)} ${unit}`),
+          fact('Seguridad', `${fmtInt(p.params.safetyStock)} ${unit}`),
+          fact('Consumo diario', `${fmtUnits(a.avgDaily)} ${unit}`),
+          fact('Cobertura', fmtDays(a.coverageDays)),
+          fact('Plazo proveedor', `${fmtInt(p.params.leadTimeDays)} días`),
+          fact('Sugerido a reponer', a.suggestedQty ? `${fmtInt(a.suggestedQty)} ${unit}` : 'Nada ahora'),
+        ),
+        h('div.btn-row',
+          h('button.btn.btn-primary', { type: 'button', onClick: () => ctx.navigate('/movimientos', { sku: p.sku }) }, 'Registrar movimiento'),
+          h('button.btn', { type: 'button', onClick: () => ctx.navigate('/inventario', { sku: p.sku, mapa: 'abc' }) }, 'Ver en el plano'),
+          h('button.btn', { type: 'button', onClick: () => ctx.navigate('/configuracion') }, 'Editar parámetros'),
+        ),
+      ),
       h('div.grid.detail-grid',
         h('section.card',
-          h('h2', 'Estado de inventario'),
-          h('p', badge(a.level, a.levelLabel), ' ', a.reasons.join(' ')),
-          h('p', `Stock total: ${fmtInt(detail.total)} ${p.unit}. Disponible: ${fmtInt(detail.available)}. Comprometido: ${fmtInt(detail.committed)}. Por recibir: ${fmtInt(detail.pending)}.`),
-          h('p', `Mínimo: ${fmtInt(p.params.minStock)}. Punto de reposición: ${fmtInt(p.params.reorderPoint)}. Seguridad: ${fmtInt(p.params.safetyStock)}.`),
-          h('p', `Consumo promedio: ${fmtUnits(a.avgDaily)} ${p.unit} al día. Cobertura: ${fmtDays(a.coverageDays)}. El proveedor tarda ${fmtInt(p.params.leadTimeDays)} días.`),
-          h('p', a.suggestedQty
-            ? `Cantidad sugerida a reponer: ${fmtInt(a.suggestedQty)} ${p.unit}. No se genera una solicitud de compra.`
-            : 'No se sugiere reponer en este momento.'),
-          h('p.muted.small', a.replenishment.steps.join(' ')),
-          h('div.btn-row',
-            h('button.btn.btn-primary', { type: 'button', onClick: () => ctx.navigate('/movimientos', { sku: p.sku }) }, 'Registrar movimiento'),
-            h('button.btn', { type: 'button', onClick: () => ctx.navigate('/inventario', { sku: p.sku, mapa: 'abc' }) }, 'Ver en el plano Pareto'),
-            h('button.btn', { type: 'button', onClick: () => ctx.navigate('/configuracion') }, 'Editar parámetros'),
+          h('h2', 'Datos del producto'),
+          h('div.facts',
+            fact('Departamento', detail.department?.name || '—'),
+            fact('Proveedor', detail.supplier?.name || '—'),
+            fact('Costo unitario', fmtMoney(p.unitCost)),
+            fact('Unidad', unit),
+            fact('Peso', `${fmtNum(p.handling.weightKg, 2)} kg`),
+            fact('Volumen', `${fmtNum(p.handling.volumeL, 2)} L`),
+            fact('Restricción', HANDLING_RESTRICTIONS[p.handling.restriction]),
           ),
         ),
         h('section.card',
-          h('h2', 'Datos maestros (ficticios)'),
-          h('p', `Departamento habitual: ${detail.department?.name || '—'}. Proveedor: ${detail.supplier?.name || '—'}.`),
-          h('p', `Costo unitario de demostración: ${fmtMoney(p.unitCost)}. Unidad: ${p.unit}.`),
-          h('p', `Peso ${fmtNum(p.handling.weightKg, 2)} kg · Volumen ${fmtNum(p.handling.volumeL, 2)} L · ${HANDLING_RESTRICTIONS[p.handling.restriction]}.`),
-          h('h3', 'Clasificación ABC por criterio'),
+          h('h2', 'Clasificación ABC'),
           dataTable({
             columns: [
               { key: 'label', label: 'Criterio' },
